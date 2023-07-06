@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task2/utils.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Task 2',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -31,7 +32,7 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   final _categoryList = [
     Category(
-      key: GlobalKey(),
+      id: 1,
       name: 'Category 1',
       color: Colors.red,
       productList: [
@@ -43,7 +44,7 @@ class _HomePageState extends State<HomePage>
       ],
     ),
     Category(
-      key: GlobalKey(),
+      id: 2,
       name: 'Category 2',
       color: Colors.green,
       productList: [
@@ -53,7 +54,7 @@ class _HomePageState extends State<HomePage>
       ],
     ),
     Category(
-      key: GlobalKey(),
+      id: 3,
       name: 'Category 3',
       color: Colors.blue,
       productList: [
@@ -62,7 +63,7 @@ class _HomePageState extends State<HomePage>
       ],
     ),
     Category(
-      key: GlobalKey(),
+      id: 4,
       name: 'Category 4',
       color: Colors.orange,
       productList: [
@@ -72,7 +73,7 @@ class _HomePageState extends State<HomePage>
       ],
     ),
     Category(
-      key: GlobalKey(),
+      id: 5,
       name: 'Category 5',
       color: Colors.pink,
       productList: [
@@ -81,26 +82,25 @@ class _HomePageState extends State<HomePage>
       ],
     ),
     Category(
-      key: GlobalKey(),
+      id: 6,
       name: 'Category 6',
       color: Colors.yellow,
       productList: [
         Product(name: 'Product 16'),
         Product(name: 'Product 17'),
         Product(name: 'Product 18'),
+        Product(name: 'Product 19'),
+        Product(name: 'Product 20'),
       ],
     ),
   ];
 
   late TabController _tabController;
 
-  //final _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
     _tabController = TabController(vsync: this, length: _categoryList.length);
-    //_scrollController.addListener(() {});
   }
 
   @override
@@ -158,8 +158,12 @@ class _HomePageState extends State<HomePage>
   void _handleClickTab(int tabIndex) {
     debugPrint('Tab $tabIndex selected.');
 
-    WidgetsBinding.instance.addPostFrameCallback((_) =>
-        Scrollable.ensureVisible(_categoryList[tabIndex].key.currentContext!));
+    Scrollable.ensureVisible(
+      GlobalObjectKey(_categoryList[tabIndex].id).currentContext!,
+      duration: const Duration(milliseconds: 500),
+      alignment: 0, // 0 mean, scroll to the top, 0.5 mean, half
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   Widget _buildProductList() {
@@ -167,68 +171,99 @@ class _HomePageState extends State<HomePage>
       onNotification: (notification) {
         debugPrint('List position: ${notification.metrics.pixels}');
 
+        var scrollDistance = notification.metrics.pixels;
+        for (var i = 0; i < _categoryList.length; i++) {
+          var topPosition = 0.0;
+          for (var j = 0; j <= i; j++) {
+            topPosition += _categoryList[j].height ?? 0.0;
+          }
+          if (scrollDistance < topPosition) {
+            _tabController.animateTo(i);
+            break;
+          }
+        }
+
         // Return true to cancel the notification bubbling. Return false (or null) to
         // allow the notification to continue to be dispatched to further ancestors.
         return true;
       },
-      child: ListView(
-        children: _categoryList
-            .map(
-              (category) => Column(
-                key: category.key,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+      // Replace the ListView with SingleChildScrollView and the Column,
+      // to work around the issue of being unable to scroll to an item that is
+      // not yet built (because it is outside the viewport).
+      child: SingleChildScrollView(
+        child: Column(
+          children: _categoryList
+              .map(
+                (category) => MeasureSize(
+                  onChange: (size) => _measureSize(category, size),
+                  child: Column(
+                    //key: category.key,
+                    key: GlobalObjectKey(category.id),
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 32.0, bottom: 16.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            _tabController
-                                .animateTo(_categoryList.indexOf(category));
-                          },
-                          child: Text(
-                            category.name,
-                            style: TextStyle(
-                              color: category.color,
-                              fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(top: 32.0, bottom: 16.0),
+                            child: GestureDetector(
+                              onTap: () {
+                                _tabController
+                                    .animateTo(_categoryList.indexOf(category));
+                              },
+                              child: Text(
+                                category.name,
+                                style: TextStyle(
+                                  color: category.color,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: category.productList
+                            .map(
+                              (product) => Card(
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(product.name),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: category.productList
-                        .map((product) => Card(
-                                child: Row(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(product.name),
-                                ),
-                              ],
-                            )))
-                        .toList(),
-                  ),
-                ],
-              ),
-            )
-            .toList(),
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
+  }
+
+  void _measureSize(Category category, Size size) {
+    debugPrint('${category.name} height: ${size.height}');
+    category.height = size.height;
   }
 }
 
 class Category {
-  final GlobalKey key;
+  final int id;
   final String name;
   final Color color;
   final List<Product> productList;
+  double? height;
 
   Category({
-    required this.key,
+    required this.id,
     required this.name,
     required this.color,
     required this.productList,
