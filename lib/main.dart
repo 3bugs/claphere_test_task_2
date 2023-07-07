@@ -179,20 +179,19 @@ class _HomePageState extends State<HomePage>
                     ),
                     Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: category.productList
-                          .map(
-                            (product) => Card(
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(product.name),
-                                  ),
-                                ],
-                              ),
+                      children: [
+                        for (final product in category.productList)
+                          Card(
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(product.name),
+                                ),
+                              ],
                             ),
-                          )
-                          .toList(),
+                          ),
+                      ],
                     ),
                   ],
                 ),
