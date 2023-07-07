@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:task2/utils.dart';
 
@@ -30,70 +32,31 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  final _categoryList = [
-    Category(
-      id: 1,
-      name: 'Category 1',
-      color: Colors.red,
-      productList: [
-        Product(name: 'Product 1'),
-        Product(name: 'Product 2'),
-        Product(name: 'Product 3'),
-        Product(name: 'Product 4'),
-        Product(name: 'Product 5'),
-      ],
-    ),
-    Category(
-      id: 2,
-      name: 'Category 2',
-      color: Colors.green,
-      productList: [
-        Product(name: 'Product 6'),
-        Product(name: 'Product 7'),
-        Product(name: 'Product 8'),
-      ],
-    ),
-    Category(
-      id: 3,
-      name: 'Category 3',
-      color: Colors.blue,
-      productList: [
-        Product(name: 'Product 9'),
-        Product(name: 'Product 10'),
-      ],
-    ),
-    Category(
-      id: 4,
-      name: 'Category 4',
-      color: Colors.orange,
-      productList: [
-        Product(name: 'Product 11'),
-        Product(name: 'Product 12'),
-        Product(name: 'Product 13'),
-      ],
-    ),
-    Category(
-      id: 5,
-      name: 'Category 5',
-      color: Colors.pink,
-      productList: [
-        Product(name: 'Product 14'),
-        Product(name: 'Product 15'),
-      ],
-    ),
-    Category(
-      id: 6,
-      name: 'Category 6',
-      color: Colors.yellow,
-      productList: [
-        Product(name: 'Product 16'),
-        Product(name: 'Product 17'),
-        Product(name: 'Product 18'),
-        Product(name: 'Product 19'),
-        Product(name: 'Product 20'),
-      ],
-    ),
+  static const numCategory = 10;
+  static const colorList = [
+    Colors.red,
+    Colors.green,
+    Colors.blue,
+    Colors.orange,
+    Colors.yellow,
   ];
+  static var _startProductId = 1;
+
+  final _categoryList = List.generate(numCategory, (i) => i + 1).map(
+    (n) {
+      return Category(
+        id: n,
+        name: 'Category $n',
+        color: colorList[(n - 1) % colorList.length],
+        productList: List.generate(Random().nextInt(5) + 1, (i) => i + 1).map(
+          (_) {
+            var productId = _startProductId++;
+            return Product(id: productId, name: 'Product $productId');
+          },
+        ).toList(),
+      );
+    },
+  ).toList();
 
   late TabController _tabController;
 
@@ -131,27 +94,26 @@ class _HomePageState extends State<HomePage>
       isScrollable: true,
       controller: _tabController,
       onTap: _handleClickTab,
-      tabs: _categoryList
-          .map(
-            (category) => Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Container(
-                    width: 60.0,
-                    height: 60.0,
-                    margin: const EdgeInsets.all(4.0),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: category.color,
-                    ),
+      tabs: [
+        for (final category in _categoryList)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Container(
+                  width: 60.0,
+                  height: 60.0,
+                  margin: const EdgeInsets.all(4.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: category.color,
                   ),
-                  Text(category.name),
-                ],
-              ),
+                ),
+                Text(category.name),
+              ],
             ),
-          )
-          .toList(),
+          ),
+      ],
     );
   }
 
@@ -192,58 +154,52 @@ class _HomePageState extends State<HomePage>
       // not yet built (because it is outside the viewport).
       child: SingleChildScrollView(
         child: Column(
-          children: _categoryList
-              .map(
-                (category) => MeasureSize(
-                  onChange: (size) => _measureSize(category, size),
-                  child: Column(
-                    //key: category.key,
-                    key: GlobalObjectKey(category.id),
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(top: 32.0, bottom: 16.0),
-                            child: GestureDetector(
-                              onTap: () {
-                                _tabController
-                                    .animateTo(_categoryList.indexOf(category));
-                              },
-                              child: Text(
-                                category.name,
-                                style: TextStyle(
-                                  color: category.color,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+          children: [
+            for (final category in _categoryList)
+              MeasureSize(
+                onChange: (size) => _measureSize(category, size),
+                child: Column(
+                  key: GlobalObjectKey(category.id),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(top: 32.0, bottom: 16.0),
+                          child: Text(
+                            category.name,
+                            style: TextStyle(
+                              color: category.color,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ],
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: category.productList
-                            .map(
-                              (product) => Card(
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text(product.name),
-                                    ),
-                                  ],
-                                ),
+                        ),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: category.productList
+                          .map(
+                            (product) => Card(
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(product.name),
+                                  ),
+                                ],
                               ),
-                            )
-                            .toList(),
-                      ),
-                    ],
-                  ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
                 ),
-              )
-              .toList(),
+              ),
+            const SizedBox(height: 500.0),
+            const Text('End of list'),
+          ],
         ),
       ),
     );
@@ -271,7 +227,8 @@ class Category {
 }
 
 class Product {
+  final int id;
   final String name;
 
-  Product({required this.name});
+  Product({required this.id, required this.name});
 }
